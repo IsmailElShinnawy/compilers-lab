@@ -229,13 +229,14 @@ public class RegExToNfa {
 		HashSet<Integer> processed = new HashSet<Integer>();
 		Queue<Node> queue = new LinkedList<>();
 		queue.add(nfa.start);
+		processed.add(nfa.start.getId());
 		while (!queue.isEmpty()) {
 			Node node = queue.poll();
-			processed.add(node.getId());
 			transitions.addAll(node.getTransitions());
 			for (Node other : node.getAllToNodes()) {
 				if (!processed.contains(other.getId())) {
 					queue.add(other);
+					processed.add(other.getId());
 				}
 			}
 		}
