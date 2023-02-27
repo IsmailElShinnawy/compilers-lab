@@ -35,7 +35,7 @@ class Transition implements Comparable<Transition> {
 
 class Node implements Comparable<Node> {
 	private String id;
-	private HashMap<String, LinkedList<Node>> links;
+	private HashMap<String, Collection<Node>> links;
 	private boolean isAccept = false; 
 
 	public Node(String id) {
@@ -44,7 +44,7 @@ class Node implements Comparable<Node> {
 	}
 
 	public void addLink(String symbol, Node node) {
-		LinkedList<Node> list = links.get(symbol);
+		Collection<Node> list = links.get(symbol);
 		if (list == null) {
 			list = new LinkedList<>();
 			links.put(symbol, list);
@@ -65,7 +65,7 @@ class Node implements Comparable<Node> {
 		while (!q.isEmpty()) {
 			Node node = q.poll();
 			reachableNodes.add(node);
-			LinkedList<Node> epsilonNodes = node.links.get("e");
+			Collection<Node> epsilonNodes = node.links.get("e");
 			if (epsilonNodes != null) {
 				for (Node epsilonNode : epsilonNodes) {
 					if (!visited.contains(epsilonNode)) {
@@ -78,21 +78,21 @@ class Node implements Comparable<Node> {
 		return reachableNodes;
 	}
 
-	public LinkedList<Node> getReachableNodesFromSymbol(String symbol) {
-		LinkedList<Node> reachableNodes = links.get(symbol);
+	public Collection<Node> getReachableNodesFromSymbol(String symbol) {
+		Collection<Node> reachableNodes = links.get(symbol);
 		if (reachableNodes == null) {
 			reachableNodes = new LinkedList<>();
 		}
 		return reachableNodes;
 	}
 
-	public HashMap<String, LinkedList<Node>> getLinks() {
+	public HashMap<String, Collection<Node>> getLinks() {
 		return this.links;
 	}
 
-	public LinkedList<Node> getAllToNodes() {
-		LinkedList<Node> nodes = new LinkedList<>();
-		for (LinkedList<Node> list : links.values()) {
+	public Collection<Node> getAllToNodes() {
+		Collection<Node> nodes = new LinkedList<>();
+		for (Collection<Node> list : links.values()) {
 			for (Node node : list) {
 				nodes.add(node);
 			}
@@ -109,10 +109,10 @@ class Node implements Comparable<Node> {
 	}
 
 	public Collection<Transition> getTransitions() {
-		LinkedList<Transition> transitions = new LinkedList<>();
-		for(Map.Entry<String, LinkedList<Node>> entry : this.getLinks().entrySet()) {
+		Collection<Transition> transitions = new LinkedList<>();
+		for(Map.Entry<String, Collection<Node>> entry : this.getLinks().entrySet()) {
 			String symbol = entry.getKey();
-			LinkedList<Node> nodes = entry.getValue();
+			Collection<Node> nodes = entry.getValue();
 			for(Node node : nodes) {
 				transitions.add(new Transition(this, symbol, node));
 			}
@@ -270,7 +270,7 @@ public class NfaToDfa {
 				String nfaNodesIds[] = dfaNode.getId().split("/");
 				for (String id: nfaNodesIds) {
 					Node nfaNode = nfa.getNode(id);
-					LinkedList<Node> reachableNodesFromSymbol = nfaNode.getReachableNodesFromSymbol(symbol);
+					Collection<Node> reachableNodesFromSymbol = nfaNode.getReachableNodesFromSymbol(symbol);
 					for (Node reachableNode : reachableNodesFromSymbol) {
 						reachableNodes.addAll(reachableNode.getEpsilonClosure());
 					}
@@ -286,7 +286,7 @@ public class NfaToDfa {
 							break;
 						}
 					}
-					String id = Node.getIdFrom(new ArrayList<>(reachableNodes));
+					String id = Node.getIdFrom(reachableNodes);
 					Node reachableDfaNode = dfa.getNodeOrCreate(id);
 					reachableDfaNode.setAccept(isAccept);
 					dfaNode.addLink(symbol, reachableDfaNode);
