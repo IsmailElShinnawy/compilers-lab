@@ -179,17 +179,16 @@ public class NfaToDfa {
 
 		dfa.setStart(initialDfaNode);
 
-		HashSet<String> processed = new HashSet<>();
+		HashSet<DfaNode> visited = new HashSet<>();
 		Queue<DfaNode> q = new LinkedList<>();
 		q.add(initialDfaNode);
-		processed.add(initialDfaNode.getId());
+		visited.add(initialDfaNode);
 		while (!q.isEmpty()) {
 			DfaNode dfaNode = q.poll();
 			for (String symbol : alphabet) {
 				HashSet<Node> reachableNodes = new HashSet<>();
 				for (Node nfaNode : dfaNode.getNfaNodes()) {
 					LinkedList<Node> reachableNodesFromSymbol = nfaNode.getReachableNodesFromSymbol(symbol);
-					reachableNodes.addAll(reachableNodesFromSymbol);
 					for (Node reachableNode : reachableNodesFromSymbol) {
 						reachableNodes.addAll(reachableNode.getEpsilonClosure());
 					}
@@ -200,9 +199,9 @@ public class NfaToDfa {
 					String id = DfaNode.getIdFrom(new ArrayList<>(reachableNodes));
 					DfaNode reachableDfaNode = (DfaNode) dfa.getNodeOrCreate(id);
 					dfaNode.addLink(symbol, reachableDfaNode);
-					if (!processed.contains(reachableDfaNode.getId())) {
+					if (!visited.contains(reachableDfaNode)) {
 						q.add(reachableDfaNode);
-						processed.add(reachableDfaNode.getId());
+						visited.add(reachableDfaNode);
 					}
 				}
 			}
