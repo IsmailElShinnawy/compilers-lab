@@ -34,16 +34,19 @@ class Node {
 
 	public HashSet<Node> getEpsilonClosure() {
 		HashSet<Node> reachableNodes = new HashSet<>();
+		HashSet<Node> visited = new HashSet<>();
 		Queue<Node> q = new LinkedList<>();
 		q.add(this);
+		visited.add(this);
 		while (!q.isEmpty()) {
 			Node node = q.poll();
 			reachableNodes.add(node);
 			LinkedList<Node> epsilonNodes = node.links.get("e");
 			if (epsilonNodes != null) {
 				for (Node epsilonNode : epsilonNodes) {
-					if (!reachableNodes.contains(epsilonNode)) {
+					if (!visited.contains(epsilonNode)) {
 						q.add(epsilonNode);
+						visited.add(epsilonNode);
 					}
 				}
 			}
