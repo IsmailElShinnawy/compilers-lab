@@ -86,10 +86,6 @@ class Node implements Comparable<Node> {
 		return reachableNodes;
 	}
 
-	public HashMap<String, Collection<Node>> getLinks() {
-		return this.links;
-	}
-
 	public Collection<Node> getAllToNodes() {
 		Collection<Node> nodes = new LinkedList<>();
 		for (Collection<Node> list : links.values()) {
@@ -110,7 +106,7 @@ class Node implements Comparable<Node> {
 
 	public Collection<Transition> getTransitions() {
 		Collection<Transition> transitions = new LinkedList<>();
-		for(Map.Entry<String, Collection<Node>> entry : this.getLinks().entrySet()) {
+		for(Map.Entry<String, Collection<Node>> entry : this.links.entrySet()) {
 			String symbol = entry.getKey();
 			Collection<Node> nodes = entry.getValue();
 			for(Node node : nodes) {
