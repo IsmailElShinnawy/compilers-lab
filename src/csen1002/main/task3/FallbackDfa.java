@@ -86,7 +86,6 @@ public class FallbackDfa {
 					break;
 				} else {
 					int qr = stack.peek();
-					int copyL = L, copyR = R;
 					// Fallback
 					while (!stack.isEmpty()) {
 						L--;
@@ -102,7 +101,7 @@ public class FallbackDfa {
 					// Only need to check if stack is empty, because it is guaranteed that q0 is not
 					// an accept state
 					if (stack.isEmpty()) {
-						ans.append(input.substring(copyR, copyL)).append(",").append(qr).append(";");
+						ans.append(input.substring(R, N)).append(",").append(qr).append(";");
 						break;
 					}
 				}
