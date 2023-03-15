@@ -5,9 +5,9 @@ import java.util.*;
 /**
  * Write your info here
  * 
- * @name Jane Smith
- * @id 46-0234
- * @labNumber 07
+ * @name Ismail El Shinnawy
+ * @id 46-48474
+ * @labNumber 18
  */
 
 public class FallbackDfa {
