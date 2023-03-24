@@ -108,6 +108,30 @@ public class CfgLeftRecElim {
 		return String.format("%s#%s#%s", getVariablesString(), getTerminalsString(), getRulesString());
 	}
 
+	private void substitue(int i, int j) {
+		String Ai = variables.get(i);
+		String Aj = variables.get(j);
+		for(int k = 0; k < rules.get(Ai).size(); ++k) {
+			String sententialFormForAi = rules.get(Ai).get(k);
+			if(Character.toString(sententialFormForAi.charAt(0)).equals(Aj)) {
+				int addedRulesCount = 0;
+				rules.get(Ai).remove(k);
+				for(String sententialFormForAj: rules.get(Aj)) {
+					String newSententialFormForAi = sententialFormForAj + sententialFormForAi.substring(1);
+					if(!rules.get(Ai).contains(newSententialFormForAi)) {
+						rules.get(Ai).add(k + addedRulesCount, newSententialFormForAi);
+						++addedRulesCount;
+					}
+				}
+				if(addedRulesCount == 0) {
+					k--;
+				} else {
+					k += addedRulesCount - 1;
+				}
+			}
+		}
+	}
+
 	private void eliminateImmediateLeftRecursion(int idx) {
 		String variable = variables.get(idx);
 		ArrayList<String> newRulesListForVariable = new ArrayList<>();
@@ -133,30 +157,8 @@ public class CfgLeftRecElim {
 	 */
 	public void eliminateLeftRecursion() {
 		for(int i = 0; i < initialNumberOfVariables; ++i) {
-			String Ai = variables.get(i);
-			ArrayList<String> rulesListForAi = rules.get(Ai);
 			for(int j = 0; j < i; ++j) {
-				String Aj = variables.get(j);
-				ArrayList<String> rulesListForAj = rules.get(Aj);
-				for(int k = 0; k < rulesListForAi.size(); ++k) {
-					String sententialFormForAi = rulesListForAi.get(k);
-					if(Character.toString(sententialFormForAi.charAt(0)).equals(Aj)) {
-						int addedRulesCount = 0;
-						rulesListForAi.remove(k);
-						for(String sententialFormForAj: rulesListForAj) {
-							String newSententialFormForAi = sententialFormForAj + sententialFormForAi.substring(1);
-							if(!rulesListForAi.contains(newSententialFormForAi)) {
-								rulesListForAi.add(k + addedRulesCount, newSententialFormForAi);
-								++addedRulesCount;
-							}
-						}
-						if(addedRulesCount == 0) {
-							k--;
-						} else {
-							k += addedRulesCount - 1;
-						}
-					}
-				}
+				substitue(i, j);
 			}
 			eliminateImmediateLeftRecursion(i);
 		}
