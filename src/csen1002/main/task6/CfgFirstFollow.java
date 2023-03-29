@@ -17,13 +17,14 @@ public class CfgFirstFollow {
 	private Map<Character, Set<Character>> first, follow;
 
 	private static int characterComparator(Character a, Character b) {
-		if(a == '$') return 1;
-		if(b == '$') return -1;
+		if(a == b) return 0;
+		if(a == '$') return -1;
+		if(b == '$') return 1;
 		return a.compareTo(b);
 	}
 
 	private void init() {
-		variables = new HashSet<>();
+		variables = new ArrayList<>();
 		terminals = new HashSet<>();
 		rules = new HashMap<>();
 
@@ -74,74 +75,14 @@ public class CfgFirstFollow {
 			follow.put(v, new TreeSet<>(CfgFirstFollow::characterComparator));
 		}
 
+		for(Character t: terminals) {
+			first.put(t, new TreeSet<>(CfgFirstFollow::characterComparator));
+			first.get(t).add(t);
+		}
+
+		first.put('e', new TreeSet<>());
+		first.get('e').add('e');
 		follow.get('S').add('$');
-	}
-
-	private static boolean isEmpty(String sententialForm) {
-		return sententialForm.length() == 0;
-	}
-
-	private Set<String> getAllPossibleNextSententialForms(String sententialForm) {
-		Set<String> result = new HashSet<>();
-		
-		for(int i = 0; i < sententialForm.length(); ++i) {
-			if(variables.contains(sententialForm.charAt(i))) {
-				Set<String> productions = rules.get(sententialForm.charAt(i));
-				for(String production: productions) {
-					String s = sententialForm.substring(0, i) + production + sententialForm.substring(i + 1);
-					result.add(s.replaceAll("e", ""));
-				}
-			}
-		}
-
-		return result;
-	}
-
-	private void dfs(Character startVariable) {
-		// Node root = new Node(Character.toString(startVariable));
-		String root = Character.toString(startVariable);
-
-		Set<String> visited = new HashSet<>();
-		Stack<String> stack = new Stack<>();
-		stack.push(root);
-
-		while(!stack.isEmpty()) {
-			String sententialForm = stack.pop();
-			System.out.println(sententialForm);
-			
-			// populate first(A)
-			if(isEmpty(sententialForm)) {
-				first.get(startVariable).add('e');
-			} else if(terminals.contains(sententialForm.charAt(0))) {
-				first.get(startVariable).add(sententialForm.charAt(0));
-			} 
-
-			// populate follow(A)
-			for(int i = 0; i < sententialForm.length(); ++i) {
-				if(sententialForm.charAt(i) == startVariable) {
-					if(i == sententialForm.length() - 1) {
-						follow.get(startVariable).add('$');
-					} else if(terminals.contains(sententialForm.charAt(i + 1))){
-						follow.get(startVariable).add(sententialForm.charAt(i + 1));
-					}
-				}
-			}
-
-			Set<String> allPossibleNextSententialForms = getAllPossibleNextSententialForms(sententialForm);
-			for(String next: allPossibleNextSententialForms) {
-				if(!visited.contains(next)) {
-					visited.add(next);
-					stack.push(next);
-				}
-			}
-		}
-
-	}
-
-	private void preprocess() {
-		for(Character v: variables) {
-			dfs(v);
-		}
 	}
 
 	/**
@@ -154,7 +95,32 @@ public class CfgFirstFollow {
 		init();
 		parseCfg(cfg);
 		populateFirstAndFollow();
-		preprocess();
+	}
+
+	private Set<Character> getFirstIntersectionSet(String sententialForm) {
+		List<Set<Character>> firstSets = new ArrayList<>();
+		for(int i = 0; i < sententialForm.length(); ++i) {
+			firstSets.add(first.get(sententialForm.charAt(i)));
+		}
+		Set<Character> result = new HashSet<>();
+		for(int i = 0; i < firstSets.size(); ++i) {
+			for(Character c: firstSets.get(i)) {
+				boolean f = true;
+				for(int j = 0; j < firstSets.size(); ++j) {
+					if(i != j) {
+						if(!firstSets.get(j).contains(c)) {
+							f = false;
+							break;
+						}
+					}
+				}
+				if(f) {
+					result.add(c);
+				}
+			}
+		}
+
+		return result;
 	}
 
 	
@@ -165,18 +131,71 @@ public class CfgFirstFollow {
 	 *         formatted as specified in the task description.
 	 */
 	public String first() {
-		StringBuilder sb = new StringBuilder();
-		for(Character v: variables) {
-			StringBuilder innerSb = new StringBuilder();
-			Set<Character> firstSet = first.get(v);
-			if(!firstSet.isEmpty()) {
-				for(Character c: firstSet) {
-					innerSb.append(c);
+		boolean change = true;
+		while(change) {
+			change = false;
+			for(Map.Entry<Character, Set<String>> entry: rules.entrySet()) {
+				char v = entry.getKey();
+				Set<String> sententialForms = entry.getValue();
+				for(String sf: sententialForms) {
+					Set<Character> intersectionSetFromB0toBk = getFirstIntersectionSet(sf);
+					if(intersectionSetFromB0toBk.contains('e') && !first.get(v).contains('e')) {
+						change = true;
+						first.get(v).add('e');
+					}
+					for(int i = 0; i < sf.length(); ++i) {
+						Set<Character> intersectionSetFromB0toBi = getFirstIntersectionSet(sf.substring(0, i));
+						if(i == 0 || intersectionSetFromB0toBi.contains('e')) {
+							Set<Character> firstSetForBi = first.get(sf.charAt(i));
+							for(Character c: firstSetForBi) {
+								if(c != 'e' && !first.get(v).contains(c)) {
+									change = true;
+									first.get(v).add(c);
+								}
+							}
+						}
+					}
 				}
-				sb.append(v).append("/").append(innerSb).append(";");
 			}
 		}
+
+		StringBuilder sb = new StringBuilder();
+		for(Character v: variables) {
+			sb.append(v).append("/");
+			for(Character f: first.get(v)) {
+				sb.append(f);
+			}
+			sb.append(";");
+		}
+
 		return sb.substring(0, sb.length() - 1);
+	}
+
+	public Set<Character> first(String sententialForm) {
+		if(sententialForm.length() == 1) {
+			if(terminals.contains(sententialForm.charAt(0)) || sententialForm.equals("e")) {
+				return first.get(sententialForm.charAt(0));
+			}
+			if(variables.contains(sententialForm.charAt(0))) {
+				Set<Character> result = new HashSet<>();
+				for(String sf: rules.get(sententialForm.charAt(0))) {
+					if(sf.equals("e")) {
+						result.add('e');
+					} else {
+						result.addAll(first(sf));
+					}
+				}
+				return result;
+			}
+		}
+		Set<Character> result = new HashSet<>();
+		for(int i = 0; i < sententialForm.length(); ++i) {
+			Set<Character> set = getFirstIntersectionSet(sententialForm.substring(0, i));
+			if(i == 0 || set.contains('e')) {
+				result.addAll(first.get(sententialForm.charAt(i)));
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -186,22 +205,57 @@ public class CfgFirstFollow {
 	 *         formatted as specified in the task description.
 	 */
 	public String follow() {
-		StringBuilder sb = new StringBuilder();
-		for(Character v: variables) {
-			StringBuilder innerSb = new StringBuilder();
-			Set<Character> followSet = follow.get(v);
-			if(!followSet.isEmpty()) {
-				for(Character c: followSet) {
-					innerSb.append(c);
+
+		first();
+
+		boolean change = true;
+		while(change) {
+			change = false;
+			for(Map.Entry<Character, Set<String>> entry: rules.entrySet()) {
+				char v = entry.getKey();
+				Set<String> sententialForms = entry.getValue();
+				for(String sf: sententialForms) {
+					for(int i = 0; i < sf.length(); ++i) {
+						if(variables.contains(sf.charAt(i))) {
+							String beta = i < sf.length() - 1 ? sf.substring(i) : "e";
+							Set<Character> set = first(beta);
+							for(Character c: set) {
+								if(c != 'e' && !follow.get(sf.charAt(i)).contains(c)) {
+									change = true;
+									follow.get(sf.charAt(i)).add(c);
+								}
+							}
+							if(set.contains('e')) {
+								Set<Character> tempSet = new HashSet<>();
+								for(Character c: follow.get(v)) {
+									if(!follow.get(sf.charAt(i)).contains(c)) {
+										change = true;
+										tempSet.add(c);
+									}
+								}
+								follow.get(sf.charAt(i)).addAll(tempSet);
+							}
+						}
+					}
 				}
-				sb.append(v).append("/").append(innerSb).append(";");
 			}
 		}
+
+		StringBuilder sb = new StringBuilder();
+		for(Character v: variables) {
+			sb.append(v).append("/");
+			for(Character f: follow.get(v)) {
+				sb.append(f);
+			}
+			sb.append(";");
+		}
+
 		return sb.substring(0, sb.length() - 1);
 	}
 
 	public static void main(String[] args) {
-		new CfgFirstFollow("S;Z;I;P;B;J;W#b;f;i;m;n;p;s#S/PZb,S,iBbB;Z/II,If,P;I/B,JZPP,SPnJS,SWsI,bBPb,iB;P/JWWfP,S,Ss,e;B/e,pBPBb,sSP;J/BmPZ,Z,iP;W/bZ,mPnWb,pWBfB");
+		CfgFirstFollow cfgFirstFollow= new CfgFirstFollow("S;Z;I;P;B;J;W#b;f;i;m;n;p;s#S/PZb,S,iBbB;Z/II,If,P;I/B,JZPP,SPnJS,SWsI,bBPb,iB;P/JWWfP,S,Ss,e;B/e,pBPBb,sSP;J/BmPZ,Z,iP;W/bZ,mPnWb,pWBfB");
+		cfgFirstFollow.follow();
 	}
 
 }
