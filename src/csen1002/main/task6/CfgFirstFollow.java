@@ -172,27 +172,24 @@ public class CfgFirstFollow {
 	}
 
 	public Set<Character> first(String sententialForm) {
-		if(sententialForm.length() == 1) {
-			if(terminals.contains(sententialForm.charAt(0)) || sententialForm.equals("e")) {
-				return first.get(Character.toString(sententialForm.charAt(0)));
-			}
-			if(variables.contains(sententialForm.charAt(0))) {
-				Set<Character> result = new HashSet<>();
-				for(String sf: rules.get(sententialForm.charAt(0))) {
-					if(sf.equals("e")) {
-						result.add('e');
-					} else {
-						result.addAll(first(sf));
-					}
-				}
-				return result;
-			}
+		if(sententialForm.length() == 0) {
+			Set<Character> set =  new HashSet<>();
+			set.add('e');
+			return set;
 		}
 		Set<Character> result = new HashSet<>();
+		if(getFirstIntersectionSet(sententialForm).contains('e')) {
+			result.add('e');
+		}
 		for(int i = 0; i < sententialForm.length(); ++i) {
-			Set<Character> set = getFirstIntersectionSet(sententialForm.substring(0, i));
-			if(i == 0 || set.contains('e')) {
-				result.addAll(first.get(Character.toString(sententialForm.charAt(i))));
+			Set<Character> intersectionSet = getFirstIntersectionSet(sententialForm.substring(0, i));
+			if(i == 0 || intersectionSet.contains('e')) {
+				Set<Character> firstSet = first.get(Character.toString(sententialForm.charAt(i)));
+				for(Character c: firstSet) {
+					if(c != 'e') {
+						result.add(c);
+					}
+				}
 			}
 		}
 		return result;
@@ -217,23 +214,20 @@ public class CfgFirstFollow {
 				for(String sf: sententialForms) {
 					for(int i = 0; i < sf.length(); ++i) {
 						if(variables.contains(sf.charAt(i))) {
-							String beta = i < sf.length() - 1 ? sf.substring(i) : "e";
-							Set<Character> set = first(beta);
-							for(Character c: set) {
+							Set<Character> firstSet = first(sf.substring(i + 1));
+							for(Character c: firstSet) {
 								if(c != 'e' && !follow.get(Character.toString(sf.charAt(i))).contains(c)) {
 									change = true;
 									follow.get(Character.toString(sf.charAt(i))).add(c);
 								}
 							}
-							if(set.contains('e')) {
-								Set<Character> tempSet = new HashSet<>();
+							if(firstSet.contains('e')) {
 								for(Character c: follow.get(Character.toString(v))) {
 									if(!follow.get(Character.toString(sf.charAt(i))).contains(c)) {
 										change = true;
-										tempSet.add(c);
+										follow.get(Character.toString(sf.charAt(i))).add(c);
 									}
 								}
-								follow.get(Character.toString(sf.charAt(i))).addAll(tempSet);
 							}
 						}
 					}
