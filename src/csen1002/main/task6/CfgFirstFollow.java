@@ -14,7 +14,7 @@ public class CfgFirstFollow {
 
 	private Collection<Character> variables, terminals;
 	private Map<Character, Set<String>> rules;
-	private Map<Character, Set<Character>> first, follow;
+	private Map<String, Set<Character>> first, follow;
 
 	private static int characterComparator(Character a, Character b) {
 		if(a == b) return 0;
@@ -69,20 +69,20 @@ public class CfgFirstFollow {
 		parseRules(st.nextToken());
 	}
 
-	private void populateFirstAndFollow() {
+	private void initializeFirstAndFollow() {
 		for(Character v: variables) {
-			first.put(v, new TreeSet<>(CfgFirstFollow::characterComparator));
-			follow.put(v, new TreeSet<>(CfgFirstFollow::characterComparator));
+			first.put(Character.toString(v), new TreeSet<>(CfgFirstFollow::characterComparator));
+			follow.put(Character.toString(v), new TreeSet<>(CfgFirstFollow::characterComparator));
 		}
 
 		for(Character t: terminals) {
-			first.put(t, new TreeSet<>(CfgFirstFollow::characterComparator));
-			first.get(t).add(t);
+			first.put(Character.toString(t), new TreeSet<>(CfgFirstFollow::characterComparator));
+			first.get(Character.toString(t)).add(t);
 		}
 
-		first.put('e', new TreeSet<>());
-		first.get('e').add('e');
-		follow.get('S').add('$');
+		first.put("e", new TreeSet<>());
+		first.get("e").add('e');
+		follow.get("S").add('$');
 	}
 
 	/**
@@ -94,13 +94,13 @@ public class CfgFirstFollow {
 	public CfgFirstFollow(String cfg) {
 		init();
 		parseCfg(cfg);
-		populateFirstAndFollow();
+		initializeFirstAndFollow();
 	}
 
 	private Set<Character> getFirstIntersectionSet(String sententialForm) {
 		List<Set<Character>> firstSets = new ArrayList<>();
 		for(int i = 0; i < sententialForm.length(); ++i) {
-			firstSets.add(first.get(sententialForm.charAt(i)));
+			firstSets.add(first.get(Character.toString(sententialForm.charAt(i))));
 		}
 		Set<Character> result = new HashSet<>();
 		for(int i = 0; i < firstSets.size(); ++i) {
@@ -139,18 +139,18 @@ public class CfgFirstFollow {
 				Set<String> sententialForms = entry.getValue();
 				for(String sf: sententialForms) {
 					Set<Character> intersectionSetFromB0toBk = getFirstIntersectionSet(sf);
-					if(intersectionSetFromB0toBk.contains('e') && !first.get(v).contains('e')) {
+					if(intersectionSetFromB0toBk.contains('e') && !first.get(Character.toString(v)).contains('e')) {
 						change = true;
-						first.get(v).add('e');
+						first.get(Character.toString(v)).add('e');
 					}
 					for(int i = 0; i < sf.length(); ++i) {
 						Set<Character> intersectionSetFromB0toBi = getFirstIntersectionSet(sf.substring(0, i));
 						if(i == 0 || intersectionSetFromB0toBi.contains('e')) {
-							Set<Character> firstSetForBi = first.get(sf.charAt(i));
+							Set<Character> firstSetForBi = first.get(Character.toString(sf.charAt(i)));
 							for(Character c: firstSetForBi) {
-								if(c != 'e' && !first.get(v).contains(c)) {
+								if(c != 'e' && !first.get(Character.toString(v)).contains(c)) {
 									change = true;
-									first.get(v).add(c);
+									first.get(Character.toString(v)).add(c);
 								}
 							}
 						}
@@ -162,7 +162,7 @@ public class CfgFirstFollow {
 		StringBuilder sb = new StringBuilder();
 		for(Character v: variables) {
 			sb.append(v).append("/");
-			for(Character f: first.get(v)) {
+			for(Character f: first.get(Character.toString(v))) {
 				sb.append(f);
 			}
 			sb.append(";");
@@ -174,7 +174,7 @@ public class CfgFirstFollow {
 	public Set<Character> first(String sententialForm) {
 		if(sententialForm.length() == 1) {
 			if(terminals.contains(sententialForm.charAt(0)) || sententialForm.equals("e")) {
-				return first.get(sententialForm.charAt(0));
+				return first.get(Character.toString(sententialForm.charAt(0)));
 			}
 			if(variables.contains(sententialForm.charAt(0))) {
 				Set<Character> result = new HashSet<>();
@@ -192,7 +192,7 @@ public class CfgFirstFollow {
 		for(int i = 0; i < sententialForm.length(); ++i) {
 			Set<Character> set = getFirstIntersectionSet(sententialForm.substring(0, i));
 			if(i == 0 || set.contains('e')) {
-				result.addAll(first.get(sententialForm.charAt(i)));
+				result.addAll(first.get(Character.toString(sententialForm.charAt(i))));
 			}
 		}
 		return result;
@@ -220,20 +220,20 @@ public class CfgFirstFollow {
 							String beta = i < sf.length() - 1 ? sf.substring(i) : "e";
 							Set<Character> set = first(beta);
 							for(Character c: set) {
-								if(c != 'e' && !follow.get(sf.charAt(i)).contains(c)) {
+								if(c != 'e' && !follow.get(Character.toString(sf.charAt(i))).contains(c)) {
 									change = true;
-									follow.get(sf.charAt(i)).add(c);
+									follow.get(Character.toString(sf.charAt(i))).add(c);
 								}
 							}
 							if(set.contains('e')) {
 								Set<Character> tempSet = new HashSet<>();
-								for(Character c: follow.get(v)) {
-									if(!follow.get(sf.charAt(i)).contains(c)) {
+								for(Character c: follow.get(Character.toString(v))) {
+									if(!follow.get(Character.toString(sf.charAt(i))).contains(c)) {
 										change = true;
 										tempSet.add(c);
 									}
 								}
-								follow.get(sf.charAt(i)).addAll(tempSet);
+								follow.get(Character.toString(sf.charAt(i))).addAll(tempSet);
 							}
 						}
 					}
@@ -244,7 +244,7 @@ public class CfgFirstFollow {
 		StringBuilder sb = new StringBuilder();
 		for(Character v: variables) {
 			sb.append(v).append("/");
-			for(Character f: follow.get(v)) {
+			for(Character f: follow.get(Character.toString(v))) {
 				sb.append(f);
 			}
 			sb.append(";");
