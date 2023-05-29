@@ -14,19 +14,24 @@ grammar A2;
 }
 
 s returns [int check]:
-    sp              {$check = $sp.check;};
+    |               {$check = 0;}
+    sp              {$check = $sp.check;}
+    | '#'.*         {$check = 0;};
 
-sp returns [int check, int firstRowSum, int firstColSum, int colCount, int countCheck]:
+sp returns [int check, int firstRowSum, int firstColSum, int colCount, int countCheck, int flag]:
     r '#' S1=sp     {$firstRowSum = $r.val;
                         $firstColSum = $r.first + $S1.firstColSum;
                         $colCount = $r.colCount;
                         $countCheck = equals($r.colCount, $S1.colCount);
-                        $check = equals($firstRowSum, $firstColSum) * $countCheck * $S1.countCheck;}
+                        $flag = 1 * $sp.flag;
+                        $check = equals($firstRowSum, $firstColSum) * $flag * $countCheck * $S1.countCheck;}
     | r             {$firstRowSum = $r.val;
                         $firstColSum = $r.first;
                         $colCount = $r.colCount;
                         $countCheck = 1;
-                        $check = equals($r.val, $r.first);};
+                        $check = equals($r.val, $r.first);
+                        $flag = 1;}
+    |               {$flag = 0;};
 
 r returns [int val, int first, int colCount]:
     DIGIT R1=r      {$val = Integer.parseInt($DIGIT.text) + $R1.val;
